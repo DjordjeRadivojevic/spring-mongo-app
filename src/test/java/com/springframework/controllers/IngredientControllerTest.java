@@ -12,6 +12,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import reactor.core.publisher.Flux;
 
 import java.util.HashSet;
 
@@ -83,7 +84,8 @@ public class IngredientControllerTest {
 
         //when
         when(recipeService.findCommandById(anyString())).thenReturn(recipeCommand);
-        when(unitOfMeasureService.listAllUoms()).thenReturn(new HashSet<>());
+//        when(unitOfMeasureService.listAllUoms()).thenReturn(new HashSet<>());
+        when(unitOfMeasureService.listAllUoms()).thenReturn(Flux.just());
 
         //then
         mockMvc.perform(get("/recipe/1/ingredient/new"))
@@ -103,7 +105,7 @@ public class IngredientControllerTest {
 
         //when
         when(ingredientService.findByRecipeIdAndIngredientId(anyString(), anyString())).thenReturn(ingredientCommand);
-        when(unitOfMeasureService.listAllUoms()).thenReturn(new HashSet<>());
+        when(unitOfMeasureService.listAllUoms()).thenReturn(Flux.just());
 
         //then
         mockMvc.perform(get("/recipe/1/ingredient/2/update"))
