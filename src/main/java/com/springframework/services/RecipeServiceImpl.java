@@ -50,13 +50,11 @@ public class RecipeServiceImpl implements RecipeService {
     }
 
     @Override
-    @Transactional
     public Mono<RecipeCommand> findCommandById(String id) {
         return findById(id).map(recipeToRecipeCommand::convert);
     }
 
     @Override
-    @Transactional
     public Mono<RecipeCommand> saveRecipeCommand(RecipeCommand command) {
         Recipe detachedRecipe = recipeCommandToRecipe.convert(command);
         Recipe savedRecipe = recipeRepository.save(detachedRecipe).block();

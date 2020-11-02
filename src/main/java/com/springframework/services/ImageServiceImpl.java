@@ -24,7 +24,6 @@ public class ImageServiceImpl implements ImageService {
     }
 
     @Override
-    @Transactional
     public Mono<Void> saveImageFile(String recipeId, MultipartFile file) {
 
         try {
