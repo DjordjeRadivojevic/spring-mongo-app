@@ -17,19 +17,16 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
-/**
- * Created by jt on 6/13/17.
- */
 @Slf4j
 @Service
 public class RecipeServiceImpl implements RecipeService {
 
-    private final RecipeReactiveRepository recipeRepository;
+    private final RecipeReactiveRepository recipeReactiveRepository;
     private final RecipeCommandToRecipe recipeCommandToRecipe;
     private final RecipeToRecipeCommand recipeToRecipeCommand;
 
-    public RecipeServiceImpl(RecipeReactiveRepository recipeRepository, RecipeCommandToRecipe recipeCommandToRecipe, RecipeToRecipeCommand recipeToRecipeCommand) {
-        this.recipeRepository = recipeRepository;
+    public RecipeServiceImpl(RecipeReactiveRepository recipeReactiveRepository, RecipeCommandToRecipe recipeCommandToRecipe, RecipeToRecipeCommand recipeToRecipeCommand) {
+        this.recipeReactiveRepository = recipeReactiveRepository;
         this.recipeCommandToRecipe = recipeCommandToRecipe;
         this.recipeToRecipeCommand = recipeToRecipeCommand;
     }
@@ -37,34 +34,40 @@ public class RecipeServiceImpl implements RecipeService {
     @Override
     public Flux<Recipe> getRecipes() {
         log.debug("I'm in the service");
-        return recipeRepository.findAll();
+        return recipeReactiveRepository.findAll();
     }
 
     @Override
     public Mono<Recipe> findById(String id) {
-        Mono<Recipe> recipe = recipeRepository.findById(id);
-        if (recipe == null) {
-            throw new NotFoundException("Recipe Not Found. For ID value: " + id );
-        }
-        return recipe;
+        return recipeReactiveRepository.findById(id);
     }
 
     @Override
     public Mono<RecipeCommand> findCommandById(String id) {
-        return findById(id).map(recipeToRecipeCommand::convert);
+
+        return recipeReactiveRepository.findById(id)
+                .map(recipe -> {
+                    RecipeCommand recipeCommand = recipeToRecipeCommand.convert(recipe);
+
+                    recipeCommand.getIngredients().forEach(rc -> {
+                        rc.setRecipeId(recipeCommand.getId());
+                    });
+
+                    return recipeCommand;
+                });
     }
 
     @Override
-    public Mono<RecipeCommand> saveRecipeCommand(RecipeCommand command) {
-        Recipe detachedRecipe = recipeCommandToRecipe.convert(command);
-        Recipe savedRecipe = recipeRepository.save(detachedRecipe).block();
-        log.debug("Saved RecipeId:" + savedRecipe.getId());
-        return Mono.just(recipeToRecipeCommand.convert(savedRecipe));
+    public Mono<RecipeCommand>  saveRecipeCommand(RecipeCommand command) {
+
+        return recipeReactiveRepository.save(recipeCommandToRecipe.convert(command))
+                .map(recipeToRecipeCommand::convert);
     }
 
     @Override
     public Mono<Void> deleteById(String idToDelete) {
-        recipeRepository.deleteById(idToDelete).block();
+        recipeReactiveRepository.deleteById(idToDelete).block();
+
         return Mono.empty();
     }
 }
